@@ -1,0 +1,164 @@
+import sys
+import webbrowser
+from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QLabel, QPushButton, QVBoxLayout,QHBoxLayout, QComboBox, QMessageBox, QTextEdit, QFrame, QLineEdit)
+from PyQt6.QtGui import QPixmap, QFont
+from PyQt6.QtCore import Qt
+#data pertolongan pertama dan kontak darurat
+PERTOLONGAN_PERTAMA = {
+    "Luka Berdarah": "1. Tekan luka dengan kain bersih.\n2. Angkat bagian yang terluka lebih tinggi dari jantung.\n3. Balut luka setelah perdarahan berhenti.",
+    "Pingsan": "1. Baringkan korban telentang.\n2. Angkat kaki lebih tinggi dari kepala.\n3. Longgarkan pakaian korban.",
+    "Sesak Napas": "1. Bantu korban duduk tegak.\n2. Longgarkan pakaian.\n3. Tenangkan dan bantu ambil napas perlahan.",
+    "Tersetrum": "1. Putuskan sumber listrik.\n2. Jangan sentuh korban langsung.\n3. Hubungi bantuan medis segera.",
+    "Luka Bakar": "1. Dinginkan area luka dengan air mengalir.\n2. Jangan oleskan pasta, mentega, dll.\n3. Tutupi dengan kain bersih.",
+    "Tulang Patah": "1. Jangan gerakkan bagian yang patah.\n2. Gunakan penopang (bidai).\n3. Hubungi bantuan medis.",
+    "Mimisan": "1. Condongkan kepala ke depan.\n2. Tekan hidung dengan lembut.\n3. Gunakan kain dingin di hidung.",
+    "Keracunan": "1. Jangan berikan makanan/minuman.\n2. Simpan sumber racun sebagai info RS.\n3. Segera bawa ke RS.",
+    "Gigitan Serangga": "1. Bersihkan area gigitan.\n2. Kompres dingin jika bengkak.\n3. Hubungi RS jika sesak napas muncul.",
+    "Serangan Jantung": "1. Dudukkan korban.\n2. Berikan aspirin jika sadar.\n3. Hubungi ambulans segera.",
+}
+KONTAK_DARURAT = {
+    "Ambulans": "118",
+    "Pemadam Kebakaran": "113",
+    "Polisi": "110",
+    "RS Terdekat": "021-12345678"
+}
+
+TIPS_GIZI = """🍎 Tips Gizi Sehat:
+1. Perbanyak makan buah dan sayur segar setiap hari.
+2. Konsumsi protein: telur, ikan, tempe, tahu.
+3. Minum air putih minimal 8 gelas/hari.
+4. Hindari makanan tinggi gula dan garam.
+5. Saat darurat, siapkan makanan kering bergizi: biskuit, susu bubuk, kacang, dll.
+6. Jaga pola makan teratur dan cukup tidur."""
+
+class SiDaruratApp(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("🆘 SiDarurat - Bantuan Darurat Warga")
+        self.setGeometry(200, 100, 850, 650)
+
+        self.central_widget = QWidget()
+        self.central_widget.setStyleSheet("background-color: #f7fafd;")
+        self.setCentralWidget(self.central_widget)
+        layout = QVBoxLayout()
+
+        # Judul
+        title_label = QLabel("🆘 SiDarurat - Panduan & Kontak Darurat")
+        title_label.setFont(QFont("Arial", 18, QFont.Weight.Bold))
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(title_label)
+
+        # Garis pembatas
+        line = QFrame()
+        line.setFrameShape(QFrame.Shape.HLine)
+        line.setFrameShadow(QFrame.Shadow.Sunken)
+        layout.addWidget(line)
+
+        # Gambar header
+        gambar_label = QLabel()
+        pixmap = QPixmap("header.png")
+        if not pixmap.isNull():
+            gambar_label.setPixmap(pixmap.scaledToWidth(700))
+            gambar_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            layout.addWidget(gambar_label)
+
+        # Panduan Pertolongan
+        panduan_layout = QVBoxLayout()
+        panduan_label = QLabel("🩺 Pilih Kondisi Darurat:")
+        panduan_label.setFont(QFont("Arial", 12))
+
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("🔍 Cari kondisi darurat...")
+        self.search_input.textChanged.connect(self.filter_kondisi)
+
+        self.panduan_combo = QComboBox()
+        self.panduan_combo.addItems(PERTOLONGAN_PERTAMA.keys())
+
+        self.panduan_teks = QTextEdit()
+        self.panduan_teks.setReadOnly(True)
+        self.panduan_teks.setStyleSheet("background-color: #ffffff;")
+
+        btn_tampilkan_panduan = QPushButton("🔎 Tampilkan Panduan")
+        btn_tampilkan_panduan.setStyleSheet("background-color: #2196f3; color: white; padding: 6px;")
+        btn_tampilkan_panduan.clicked.connect(self.tampilkan_panduan)
+
+        panduan_layout.addWidget(panduan_label)
+        panduan_layout.addWidget(self.search_input)
+        panduan_layout.addWidget(self.panduan_combo)
+        panduan_layout.addWidget(btn_tampilkan_panduan)
+        panduan_layout.addWidget(self.panduan_teks)
+
+        # Kontak Darurat
+        kontak_layout = QVBoxLayout()
+        kontak_label = QLabel("📞 Pilih Kontak Darurat:")
+        kontak_label.setFont(QFont("Arial", 12))
+
+        self.kontak_combo = QComboBox()
+        self.kontak_combo.addItems(KONTAK_DARURAT.keys())
+
+        btn_kontak = QPushButton("☎️ Lihat Nomor")
+        btn_kontak.setStyleSheet("background-color: #e53935; color: white; padding: 6px;")
+        btn_kontak.clicked.connect(self.tampilkan_kontak)
+
+        kontak_layout.addWidget(kontak_label)
+        kontak_layout.addWidget(self.kontak_combo)
+        kontak_layout.addWidget(btn_kontak)
+
+        # Tips Gizi
+        tips_gizi_label = QLabel("🍽️ Tips Gizi Sehat:")
+        tips_gizi_label.setFont(QFont("Arial", 12))
+
+        self.tips_gizi_teks = QTextEdit()
+        self.tips_gizi_teks.setPlainText(TIPS_GIZI)
+        self.tips_gizi_teks.setReadOnly(True)
+        self.tips_gizi_teks.setStyleSheet("background-color: #fffde7;")
+
+        # Tombol Edukasi dan Dokter
+        btn_edukasi = QPushButton("📘 Buka Materi Edukasi Online")
+        btn_edukasi.setStyleSheet("background-color: #43a047; color: white; padding: 8px;")
+        btn_edukasi.clicked.connect(self.buka_edukasi)
+
+        btn_dokter = QPushButton("👨‍⚕️ Konsultasi dengan Dokter")
+        btn_dokter.setStyleSheet("background-color: #6a1b9a; color: white; padding: 8px;")
+        btn_dokter.clicked.connect(self.konsultasi_dokter)
+
+        # Layout akhir
+        layout.addLayout(panduan_layout)
+        layout.addSpacing(10)
+        layout.addLayout(kontak_layout)
+        layout.addSpacing(15)
+        layout.addWidget(tips_gizi_label)
+        layout.addWidget(self.tips_gizi_teks)
+        layout.addSpacing(15)
+        layout.addWidget(btn_edukasi)
+        layout.addWidget(btn_dokter)
+
+        self.central_widget.setLayout(layout)
+
+    def tampilkan_panduan(self):
+        kondisi = self.panduan_combo.currentText()
+        panduan = PERTOLONGAN_PERTAMA.get(kondisi, "Panduan tidak ditemukan.")
+        self.panduan_teks.setPlainText(panduan)
+
+    def tampilkan_kontak(self):
+        kontak = self.kontak_combo.currentText()
+        nomor = KONTAK_DARURAT.get(kontak, "Nomor tidak ditemukan.")
+        QMessageBox.information(self, "Kontak Darurat", f"Hubungi {kontak} di nomor: {nomor}")
+
+    def buka_edukasi(self):
+        webbrowser.open("https://pmidkijakarta.or.id/page/Pertolongan-Pertama")
+
+    def konsultasi_dokter(self):
+        webbrowser.open("https://www.halodoc.com/chat-dengan-dokter")
+
+    def filter_kondisi(self, keyword):
+        keyword = keyword.lower()
+        self.panduan_combo.clear()
+        filtered = [k for k in PERTOLONGAN_PERTAMA if keyword in k.lower()]
+        self.panduan_combo.addItems(filtered if filtered else ["Tidak ditemukan"])
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = SiDaruratApp()
+    window.show()
+    sys.exit(app.exec())
